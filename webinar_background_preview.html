@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Everstage Webinar Background — Live Preview</title>
+<style>
+  :root {
+    --cream: #F8F9EC;
+    --sage: #E4EDC7;
+    --sage-deep: #D8E4B2;
+    --navy: #1B3A66;
+    --periwinkle: #D5DDF4;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #e6e8ea;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    padding: 32px;
+    color: #1B3A66;
+  }
+  h1 { font-size: 22px; margin-bottom: 6px; }
+  .note { font-size: 13px; color: #5b6b82; margin-bottom: 20px; }
+  .controls {
+    display: flex; gap: 18px; flex-wrap: wrap;
+    padding: 14px 18px; background: white; border-radius: 10px;
+    margin-bottom: 24px; box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    font-size: 13px;
+  }
+  .controls label { display: flex; align-items: center; gap: 8px; }
+  .controls input[type=color] { width: 44px; height: 28px; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; }
+  .controls input[type=range] { width: 120px; }
+  .controls select { padding: 4px 8px; border-radius: 4px; border: 1px solid #ccc; }
+
+  /* Canvas: 1920x1080 scaled via transform to fit any window width */
+  .frame-wrap {
+    width: 100%;
+    display: flex; justify-content: center;
+  }
+  .frame {
+    width: 1920px; height: 1080px;
+    position: relative;
+    background: var(--cream);
+    overflow: hidden;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+    transform-origin: top left;
+  }
+
+  /* The signature sage gradient — anchored top-right, diagonal wash */
+  .sage-wash {
+    position: absolute; inset: 0;
+    background: radial-gradient(
+      ellipse 120% 100% at 100% 0%,
+      var(--sage-deep) 0%,
+      var(--sage) 25%,
+      rgba(228, 237, 199, 0.3) 50%,
+      transparent 75%
+    );
+    pointer-events: none;
+  }
+
+  /* Very soft top wash — ties the top edge together */
+  .top-wash {
+    position: absolute; inset: 0 0 auto 0; height: 280px;
+    background: linear-gradient(to bottom, rgba(228, 237, 199, 0.35), transparent);
+    pointer-events: none;
+  }
+
+  /* Wordmark */
+  .mark {
+    position: absolute;
+    left: 90px; bottom: 80px;
+    display: flex; align-items: center; gap: 14px;
+    color: var(--navy);
+    font-weight: 600;
+    font-size: 56px;
+    letter-spacing: -0.5px;
+  }
+  .mark-ring {
+    width: 34px; height: 34px;
+    border: 3px solid var(--navy);
+    border-radius: 50%;
+    position: relative;
+  }
+  .mark-ring::after {
+    content: "";
+    position: absolute;
+    top: -2px; right: -6px;
+    width: 12px; height: 3px;
+    background: var(--navy);
+    transform: rotate(-45deg);
+    transform-origin: left center;
+  }
+
+  /* Optional: simulated speaker tile for context preview */
+  .speaker-sim {
+    position: absolute;
+    width: 480px; height: 640px;
+    left: 50%; top: 50%; transform: translate(-50%, -50%);
+    background: linear-gradient(160deg, #3a4a5c 0%, #1e2a38 100%);
+    border-radius: 180px 180px 16px 16px;
+    display: flex; align-items: flex-end; justify-content: center;
+    padding: 24px;
+    color: white; font-size: 22px;
+    opacity: 0.85;
+  }
+
+  /* Safe-zone overlays */
+  .safe-zone {
+    position: absolute;
+    border: 3px dashed rgba(27, 58, 102, 0.55);
+    pointer-events: none;
+  }
+  .safe-16-9 { left: 5%; top: 10%; right: 40%; bottom: 10%; }
+  .safe-1-1 { left: 19.58%; top: 0%; width: 1080px; height: 1080px; border-color: rgba(200, 120, 50, 0.6); }
+</style>
+</head>
+<body>
+
+<h1>Everstage webinar background — live preview</h1>
+<div class="note">1920×1080 rendered at scaled size. Open DevTools and screenshot the <code>.frame</code> element at 1:1 for a pixel-perfect export, or use the download tip below.</div>
+
+<div class="controls">
+  <label>Cream <input type="color" value="#F8F9EC" oninput="setVar('--cream', this.value)"></label>
+  <label>Sage <input type="color" value="#E4EDC7" oninput="setVar('--sage', this.value)"></label>
+  <label>Sage deep <input type="color" value="#D8E4B2" oninput="setVar('--sage-deep', this.value)"></label>
+  <label>Navy <input type="color" value="#1B3A66" oninput="setVar('--navy', this.value)"></label>
+  <label>Scale <input type="range" min="25" max="100" value="50" oninput="setScale(this.value)"></label>
+  <label>Show speaker preview <input type="checkbox" onchange="toggle('speaker-sim', this.checked)"></label>
+  <label>Show safe zones <input type="checkbox" onchange="toggleSafe(this.checked)"></label>
+</div>
+
+<div class="frame-wrap">
+  <div class="frame" id="frame">
+    <div class="sage-wash"></div>
+    <div class="top-wash"></div>
+
+    <div class="speaker-sim" style="display:none">
+      <span>speaker tile (preview)</span>
+    </div>
+
+    <div class="safe-zone safe-16-9" style="display:none"></div>
+    <div class="safe-zone safe-1-1" style="display:none"></div>
+
+    <div class="mark">
+      <div class="mark-ring"></div>
+      everstage
+    </div>
+  </div>
+</div>
+
+<p style="margin-top:20px; font-size:13px; color:#5b6b82; max-width: 900px;">
+  <b>To export a 1920×1080 PNG:</b> set scale to 100%, open DevTools
+  (Cmd+Option+I / F12), run <code>document.getElementById('frame').scrollIntoView()</code>,
+  then right-click the frame → "Capture node screenshot" in Chrome DevTools.
+  Or ping Claude with tweaks (colors, gradient direction, logo position) and a new PNG will be generated.
+</p>
+
+<script>
+function setVar(name, val) {
+  document.documentElement.style.setProperty(name, val);
+}
+function setScale(pct) {
+  const f = document.getElementById('frame');
+  const s = pct / 100;
+  f.style.transform = `scale(${s})`;
+  f.style.width = `1920px`;
+  f.style.height = `1080px`;
+  // reserve space so the page doesn't collapse around a scaled element
+  f.parentElement.style.height = (1080 * s + 40) + 'px';
+}
+function toggle(cls, on) {
+  document.querySelector('.' + cls).style.display = on ? 'flex' : 'none';
+}
+function toggleSafe(on) {
+  document.querySelectorAll('.safe-zone').forEach(e => e.style.display = on ? 'block' : 'none');
+}
+setScale(50);
+</script>
+</body>
+</html>
